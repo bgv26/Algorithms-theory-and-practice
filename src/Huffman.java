@@ -1,31 +1,58 @@
 import java.util.*;
 
+import static java.lang.String.format;
+
 class CharFrequency implements Comparable<CharFrequency> {
     private Character symbol;
     private int frequency;
+    private CharFrequency left;
+    private CharFrequency right;
 
 
-    public CharFrequency(int frequency) {
+    CharFrequency(int frequency) {
         this.frequency = frequency;
     }
 
-    public CharFrequency(char symbol, int frequency) {
+    CharFrequency(char symbol, int frequency) {
         this.symbol = symbol;
         this.frequency = frequency;
+
     }
 
-    public Character getSymbol() {
+    Character getSymbol() {
         return symbol;
     }
 
-    public int getFrequency() {
+    int getFrequency() {
         return frequency;
+    }
+
+    CharFrequency getLeft() {
+        return left;
+    }
+
+    CharFrequency getRight() {
+        return right;
+    }
+
+    void setLeft(CharFrequency left) {
+        this.left = left;
+    }
+
+    void setRight(CharFrequency right) {
+        this.right = right;
     }
 
     @Override
     public int compareTo(CharFrequency o) {
         if (frequency == o.frequency) {
-            return 0;
+            if (symbol == null) {
+                return 1;
+            } else if (o.symbol == null) {
+                return -1;
+            } else {
+                return symbol.compareTo(o.symbol);
+            }
         }
         if (frequency > o.frequency) {
             return 1;
@@ -51,136 +78,75 @@ class CharFrequenciesList {
         }
     }
 
-    public static CharFrequenciesList getInstance(String charSequence) {
+    static CharFrequenciesList getInstance(String charSequence) {
         if (instance == null) {
             instance = new CharFrequenciesList(charSequence);
         }
         return instance;
     }
 
-    public CharFrequency extractMin() {
+    CharFrequency extractMin() {
         return queue.poll();
     }
 
-    public void insert(CharFrequency cf) {
+    void insert(CharFrequency cf) {
         queue.add(cf);
     }
 
-    public boolean isEmptyQueue() {
+    boolean isEmptyQueue() {
         return queue.isEmpty();
-    }
-}
-
-class HuffmanTreeNode {
-    private HuffmanTreeNode left = null;
-    private HuffmanTreeNode right = null;
-    private HuffmanTreeNode parent = null;
-    private CharFrequency data = null;
-
-    public HuffmanTreeNode(CharFrequency data) {
-        this.data = data;
-    }
-
-    public HuffmanTreeNode(CharFrequency data, HuffmanTreeNode parent) {
-        this.data = data;
-        this.parent = parent;
-    }
-
-    public HuffmanTreeNode getLeft() {
-        return left;
-    }
-
-    public HuffmanTreeNode getRight() {
-        return right;
-    }
-
-    public HuffmanTreeNode getParent() {
-        return parent;
-    }
-
-    public CharFrequency getData() {
-        return data;
-    }
-
-    public void setLeft(HuffmanTreeNode left) {
-        this.left = left;
-    }
-
-    public void setRight(HuffmanTreeNode right) {
-        this.right = right;
-    }
-
-    public void setParent(HuffmanTreeNode parent) {
-        this.parent = parent;
-    }
-
-    public void setData(CharFrequency data) {
-        this.data = data;
     }
 }
 
 class HuffmanTree {
     private CharFrequenciesList frequenciesTree;
-    private ArrayList<HuffmanTreeNode> nodes = new ArrayList<>();
-    private HashMap<Character, String> codeMap;
+    private ArrayList<CharFrequency> nodes = new ArrayList<>();
+    private HashMap<Character, String> codeMap = new HashMap<>();
 
-    public HuffmanTree(String encodedString) {
+    HuffmanTree(String encodedString) {
         this.frequenciesTree = CharFrequenciesList.getInstance(encodedString);
         this.buildTree();
     }
 
     private void buildTree() {
-        HuffmanTreeNode parent = null;
+        CharFrequency parent = null;
         while (!frequenciesTree.isEmptyQueue()) {
-            HuffmanTreeNode left = new HuffmanTreeNode(frequenciesTree.extractMin());
-            HuffmanTreeNode right = new HuffmanTreeNode(frequenciesTree.extractMin());
-            if (left.getData() != null && right.getData() != null) {
-                int newFrequency = left.getData().getFrequency() + right.getData().getFrequency();
-                CharFrequency newElement = new CharFrequency(newFrequency);
-                frequenciesTree.insert(newElement);
-                parent = new HuffmanTreeNode(newElement);
+            CharFrequency left = frequenciesTree.extractMin();
+            CharFrequency right = frequenciesTree.extractMin();
+            if (left != null && right != null) {
+                int newFrequency = left.getFrequency() + right.getFrequency();
+                parent = new CharFrequency(newFrequency);
                 parent.setLeft(left);
                 parent.setRight(right);
-                left.setParent(parent);
-                right.setParent(parent);
+                frequenciesTree.insert(parent);
                 nodes.add(left);
                 nodes.add(right);
-            } else if (left.getData() != null) {
+            } else if (left != null) {
                 parent = left;
             }
         }
         nodes.add(parent);
-        Collections.reverse(nodes);
-        this.buildCodeMap();
+        this.buildCodeMap(nodes.get(nodes.size() - 1), "");
     }
 
-    private void buildCodeMap() {
-        codeMap = new HashMap<>();
-        StringBuilder code = new StringBuilder();
-        if (nodes.size() == 1) {
-            codeMap.put(nodes.get(0).getData().getSymbol(), "0");
-            return;
+    private void buildCodeMap(CharFrequency node, String path) {
+        CharFrequency left = node.getLeft();
+        CharFrequency right = node.getRight();
+        if (left != null) {
+            buildCodeMap(left, path + "0");
         }
-        for (HuffmanTreeNode node : nodes) {
-            HuffmanTreeNode parent = node.getParent();
-            if (parent != null) {
-                if (node == parent.getLeft()) {
-                    code.append('0');
-                }
-                if (node == parent.getRight()) {
-                    code.append('1');
-                }
-            }
-            Character c = node.getData().getSymbol();
-            if (c != null) {
-                codeMap.put(c, code.toString());
-                code = new StringBuilder();
-            }
+        if (right != null) {
+            buildCodeMap(right, path + "1");
+        }
+        Character c = node.getSymbol();
+        if (c != null) {
+            codeMap.put(c, ! path.equals("") ? path: "0");
         }
     }
 
-    public String getCode(char symbol) {
-        return codeMap.get(symbol);
+
+    HashMap<Character, String> getCodeMap() {
+        return codeMap;
     }
 }
 
@@ -189,8 +155,16 @@ public class Huffman {
         Scanner scanner = new Scanner(System.in);
         String s = scanner.nextLine();
         HuffmanTree tree = new HuffmanTree(s);
-        for (char c : s.toCharArray()) {
-            System.out.println(tree.getCode(c));
+        HashMap<Character, String> codeMap = tree.getCodeMap();
+        StringBuilder sb = new StringBuilder();
+        for (char c: s.toCharArray()) {
+            sb.append(codeMap.get(c));
         }
+        String encodedString = sb.toString();
+        System.out.println(format("%d %d", codeMap.size(), encodedString.length()));
+        for (Map.Entry<Character, String> entry : codeMap.entrySet()) {
+            System.out.println(format("%s: %s", entry.getKey(), entry.getValue()));
+        }
+        System.out.println(encodedString);
     }
 }
