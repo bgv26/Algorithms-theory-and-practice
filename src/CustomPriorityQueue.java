@@ -5,6 +5,7 @@ public class CustomPriorityQueue {
     private final static String INSERT = "Insert";
     private final static String EXTRACT = "ExtractMax";
     private static ArrayList<Integer> heap = new ArrayList<>();
+    private static int size = 0;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -23,48 +24,58 @@ public class CustomPriorityQueue {
 
     private static void insert(int value) {
         heap.add(value);
-        int lastIndex = heap.size() - 1;
-        siftUp(lastIndex);
+        if (size > 0) {
+            siftUp(size, value);
+        }
+        size++;
     }
 
     private static String extract() {
+        if (size == 0) {
+            System.out.println("Queue is empty");
+            return null;
+        }
+
         String result = String.valueOf(heap.get(0));
-        int lastIndex = heap.size() - 1;
-        heap.set(0, heap.get(lastIndex));
-        heap.remove(lastIndex);
-        siftDown(0);
+        int value = heap.get(size - 1);
+        heap.remove(size - 1);
+        size--;
+        if (size > 1) {
+            siftDown(value);
+        }
         return result;
     }
 
-    private static void siftDown(int index) {
-        int lastIndex = heap.size() - 1;
-        int leftIndex = index * 2 <= lastIndex ? index * 2 : lastIndex;
-        int rightIndex = index * 2 + 1 <= lastIndex ? index * 2 + 1 : lastIndex;
-
-        int current = heap.get(index);
-        int left = heap.get(leftIndex);
-        int right = heap.get(rightIndex);
-
-        int next = Math.min(left, right);
-        int nextIndex = next == left ? leftIndex : rightIndex;
-
-        if (current < next) {
-            heap.set(index, next);
-            heap.set(nextIndex, current);
-            siftDown(nextIndex);
+    private static void siftDown(int value) {
+        int index = 0;
+        while (index * 2 < size) {
+            int leftIndex = index * 2 + 1;
+            int left = heap.get(leftIndex);
+            int child = left;
+            int rightIndex = index * 2 + 2;
+            if (rightIndex <= size - 1 && (heap.get(rightIndex) > child)) {
+                child = heap.get(rightIndex);
+            }
+            if (value >= child) {
+                break;
+            }
+            heap.set(index, child);
+            index = (child == left) ? leftIndex : rightIndex;
         }
+        heap.set(index, value);
     }
 
-    private static void siftUp(int index) {
-        int current = heap.get(index);
-        int parent = heap.get(index / 2);
-        if (current > parent && index > 0) {
-            if (current > parent) {
-                heap.set(index, parent);
-                heap.set(index / 2, current);
-                index /= 2;
+    private static void siftUp(int index, int value) {
+        while (index > 0) {
+            int parentIndex = (index - 1) / 2;
+            int parent = heap.get(parentIndex);
+            if (value <= parent) {
+                break;
             }
-            siftUp(index);
+
+            heap.set(index, parent);
+            index = parentIndex;
         }
+        heap.set(index, value);
     }
 }
