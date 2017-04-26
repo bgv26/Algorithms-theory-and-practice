@@ -1,3 +1,22 @@
+class Pair:
+    def __init__(self, cpu_number, start_time):
+        self.cpu_number = cpu_number
+        self.start_time = start_time
+
+    def __lt__(self, other):
+        return (self.start_time < other.start_time) or \
+               (self.start_time == other.start_time and self.cpu_number < other.cpu_number)
+
+    def __eq__(self, other):
+        return self.start_time == other.start_time and self.cpu_number == other.cpu_number
+
+    def __repr__(self):
+        return 'cpu: {}, time: {}'.format(self.cpu_number, self.start_time)
+
+    def get(self):
+        return self.cpu_number, self.start_time
+
+
 class Queue:
     def __init__(self, size):
         self.size = size
@@ -24,7 +43,7 @@ class Queue:
     def sift_up(self, i):
         while i > 0:
             parent = self.parent(i)
-            if self.heap[parent][1] > self.heap[i][1]:
+            if self.heap[parent] > self.heap[i]:
                 self.__swap(i, parent)
                 i = parent
             else:
@@ -34,10 +53,10 @@ class Queue:
         while self.left(i) < len(self.heap):
             min_index = i
             left = self.left(i)
-            if self.heap[left][1] < self.heap[min_index][1]:
+            if self.heap[left] < self.heap[min_index]:
                 min_index = left
             right = self.right(i)
-            if right < len(self.heap) and self.heap[right][1] < self.heap[min_index][1]:
+            if right < len(self.heap) and self.heap[right] < self.heap[min_index]:
                 min_index = right
             if i != min_index:
                 self.__swap(i, min_index)
@@ -45,18 +64,21 @@ class Queue:
             else:
                 break
 
-    def insert(self, proc_num, start_time, end_time):
+    def insert(self, pair):
         if len(self.heap) == self.size:
             print('Queue is full')
             return
-        self.heap.append((proc_num, start_time, end_time))
+        self.heap.append(pair)
         self.sift_up(len(self.heap) - 1)
 
     def extract_min(self):
         result = self.heap[0]
-        self.heap[0] = self.heap.pop()
-        self.sift_down(0)
-        return result
+        if len(self.heap) > 1:
+            self.heap[0] = self.heap.pop()
+            self.sift_down(0)
+        else:
+            self.heap.pop()
+        return result.get()
 
     def remove(self, i):
         self.heap[i] = self.heap[0] - 1
@@ -71,28 +93,31 @@ class Queue:
         else:
             self.sift_up(i)
 
-    def build_heap(self):
+    def build_heap(self, array):
+        self.heap = array
+        self.size = len(array)
         for i in range((self.size - 1) // 2, -1, -1):
             self.sift_down(i)
+        return self
 
 
 def run():
     num_of_proc, num_of_tasks = tuple(map(int, input().split()))
-    times = tuple(map(int, input().split()))
+    times = list(map(int, input().split()))
     queue = Queue(num_of_proc)
-    n = 0
-    while n < num_of_proc:
-        queue.insert(n, 0, times[n])
-        n += 1
-    # queue.build_heap()
-    while n < num_of_tasks:
-        proc, start_time, end_time = queue.extract_min()
-        print(proc, start_time)
-        queue.insert(proc, end_time, end_time + times[n])
-        n += 1
-    while queue:
-        proc, start_time, end_time = queue.extract_min()
-        print(proc, start_time)
+    if num_of_proc < num_of_tasks:
+        n = 0
+        while n < num_of_proc:
+            queue.insert(Pair(n, 0))
+            n += 1
+        while n < num_of_tasks + num_of_proc:
+            proc, start_time = queue.extract_min()
+            print(proc, start_time)
+            queue.insert(Pair(proc, start_time + times.pop(0)))
+            n += 1
+    else:
+        for i in range(num_of_tasks):
+            print(i, 0)
 
 
 if __name__ == '__main__':
