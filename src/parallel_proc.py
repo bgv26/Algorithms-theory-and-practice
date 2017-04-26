@@ -93,11 +93,13 @@ class Queue:
         else:
             self.sift_up(i)
 
-    def build_heap(self, array):
-        self.heap = array
-        self.size = len(array)
+    @classmethod
+    def build_heap(cls, size, array):
+        self = cls(size, array)
+
         for i in range((self.size - 1) // 2, -1, -1):
             self.sift_down(i)
+
         return self
 
 

@@ -44,13 +44,16 @@ class Heap:
             else:
                 break
 
-    def build_heap(self):
+    @classmethod
+    def build_heap(cls, size, array):
+        self = cls(size, array)
+
         for i in range((self.size - 1) // 2, -1, -1):
             self.sift_down(i)
 
-        self.__print_result()
+        return self
 
-    def __print_result(self):
+    def print_result(self):
         print(len(self.swaps))
         for pair in self.swaps:
             print(*pair)
@@ -59,8 +62,8 @@ class Heap:
 def run():
     size = int(input())
     array = list(map(int, input().split()))
-    heap = Heap(size, array)
-    heap.build_heap()
+    heap = Heap.build_heap(size, array)
+    heap.print_result()
 
 
 if __name__ == '__main__':
