@@ -39,7 +39,7 @@ def keep_parent(v):
 
 def rotate(parent, child):
     grandparent = parent.parent
-    if grandparent is not None:
+    if grandparent:
         if grandparent.left == parent:
             grandparent.left = child
         else:
@@ -49,7 +49,6 @@ def rotate(parent, child):
         parent.left, child.right = child.right, parent
     else:
         parent.right, child.left = child.left, parent
-
     update_sum(parent)
     update_sum(child)
     keep_parent(child)
@@ -58,36 +57,32 @@ def rotate(parent, child):
 
 
 def splay(v):
-    while v.parent is not None:
+    while v.parent:
         parent = v.parent
         grandparent = parent.parent
         if grandparent is None:
             rotate(parent, v)
             break
         else:
-            zigzig = (grandparent.left == parent) == (parent.left == v)
-        if zigzig:
-            rotate(grandparent, parent)
-            rotate(parent, v)
-        else:
-            rotate(parent, v)
-            rotate(grandparent, v)
+            if (grandparent.left == parent) and (parent.left == v) \
+                    or (grandparent.right == parent) and (parent.right == v):
+                rotate(grandparent, parent)
+                rotate(parent, v)
+            else:
+                rotate(parent, v)
+                rotate(grandparent, v)
     return v
 
 
 def find(v, key):
-    if v is None:
-        return None
-    last = None
-    while v is not None:
-        last = v
-        if key < v.key and v.left is not None:
+    while v:
+        if key < v.key and v.left:
             v = v.left
-        elif key > v.key and v.right is not None:
+        elif key > v.key and v.right:
             v = v.right
         else:
-            break
-    return splay(last)
+            return splay(v)
+    return v
 
 
 def split(root, key):
@@ -107,9 +102,6 @@ def split(root, key):
 
 
 def insert(root, key):
-    root = find(root, key)
-    if root and root.key == key:
-        return root
     left, right = split(root, key)
     root = Node(key)
     root.left, root.right = left, right
@@ -118,13 +110,18 @@ def insert(root, key):
     return root
 
 
+def get_max(root):
+    while root.right:
+        root = root.right
+    return root
+
+
 def merge(left, right):
     if right is None:
         return left
     if left is None:
         return right
-    while left.right is not None:
-        left = left.right
+    left = get_max(left)
     splay(left)
     left.right = right
     set_parent(right, left)
@@ -134,43 +131,42 @@ def merge(left, right):
 
 def remove(root, key):
     root = find(root, key)
-    if root and root.key == key:
-        set_parent(root.left, None)
-        set_parent(root.right, None)
-        root = merge(root.left, root.right)
+    set_parent(root.left, None)
+    set_parent(root.right, None)
+    root = merge(root.left, root.right)
     return root
 
 
 def sum_of_seg(root, l, r):
-    if l == r:
-        root = find(root, l)
-        if root is not None and root.key == l:
-            return root.key, root
-    else:
-        left_left, right_left = split(root, l - 1)
-        left_right, right_right = split(right_left, r)
-        res = 0
-        if left_right:
-            res = left_right.sum
-        return res, merge(left_left, merge(left_right, right_right))
+    left_left, right_left = split(root, l - 1)
+    left_right, right_right = split(right_left, r)
+    res = 0
+    if left_right:
+        res = left_right.sum
+    return res, merge(left_left, merge(left_right, right_right))
 
 
 def run():
     number = int(input())
     last_sum = 0
     root = None
+    cache = set()
     for _ in range(number):
         parts = input().split()
         if parts[0] == '+':
             val = key_func(int(parts[1]), last_sum)
-            root = insert(root, val)
+            if val not in cache:
+                cache.add(val)
+                root = insert(root, val)
         elif parts[0] == '-':
             val = key_func(int(parts[1]), last_sum)
-            root = remove(root, val)
+            if val in cache:
+                cache.remove(val)
+                root = remove(root, val)
         elif parts[0] == '?':
             val = key_func(int(parts[1]), last_sum)
             root = find(root, val)
-            if root is not None and root.key == val:
+            if root and root.key == val:
                 print('Found')
             else:
                 print('Not found')
