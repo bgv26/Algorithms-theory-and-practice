@@ -91,6 +91,12 @@ def insert(root, key, char):
     return root
 
 
+def get_min(root):
+    while root.left:
+        root = root.left
+    return root
+
+
 def get_max(root):
     while root.right:
         root = root.right
@@ -104,9 +110,16 @@ def merge(left, right):
         return right
     left = get_max(left)
     splay(left)
-    left.right = right
-    set_parent(right, left)
-    return left
+    right = get_min(right)
+    splay(right)
+    if left.key <= right.key:
+        left.right = right
+        set_parent(right, left)
+        return left
+    else:
+        right.left = left
+        set_parent(left, right)
+        return right
 
 
 def remove(root, key):
@@ -132,15 +145,36 @@ def in_order_iterative(root):
     return path
 
 
+def reorder(root, start, end, where):
+    left_left, right = split(root, start - 1)
+    sub, right_right = split(right, end)
+    if where == 0:
+        return merge(merge(sub, left_left), right_right)
+    else:
+        if where >= start:
+            where += end - start
+        left, right = split(merge(left_left, right_right), where)
+        return merge(left, merge(sub, right))
+
+
+def renumber(root):
+    for i, node in enumerate(in_order_iterative(root)):
+        node.key = i
+    return root
+
+
 def run():
     root = None
     for i, char in enumerate(input()):
         root = insert(root, i, char)
-    print(in_order_iterative(root))
-    # number = int(input())
-    # for _ in range(number):
-    #     start, end, where = map(int, input().split())
-    #     reorder(root, start, end, where)
+    print(''.join(map(str, in_order_iterative(root))))
+    number = int(input())
+    for _ in range(number):
+        start, end, where = map(int, input().split())
+        root = reorder(root, start, end, where)
+        root = renumber(root)
+        print(''.join(map(str, in_order_iterative(root))))
+    print(''.join(map(str, in_order_iterative(root))))
 
 
 if __name__ == '__main__':
