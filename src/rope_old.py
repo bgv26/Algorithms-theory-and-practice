@@ -1,5 +1,5 @@
 class Node:
-    def __init__(self, char=None, key=1):
+    def __init__(self, key, char):
         self.key = key
         self.val = char
         self.left = None
@@ -11,16 +11,6 @@ class Node:
 
     def __repr__(self):
         return "%d: %s" % (self.key, self.val)
-
-
-def update_keys(node):
-    keys_left = keys_right = 0
-    if node:
-        if node.left:
-            keys_left = node.left.key
-        if node.right:
-            keys_right = node.right.key
-        node.key = keys_left + keys_right
 
 
 def set_parent(child, parent):
@@ -47,8 +37,6 @@ def rotate(parent, child):
         parent.right, child.left = child.left, parent
     keep_parent(child)
     keep_parent(parent)
-    update_keys(parent)
-    update_keys(child)
     child.parent = grandparent
 
 
@@ -72,11 +60,9 @@ def splay(v):
 
 def find(v, key):
     while v:
-        if key == v.key:
-            return splay(v)
-        elif key < v.key and v.left:
+        if key < v.key and v.left:
             v = v.left
-        elif v.right:
+        elif key > v.key and v.right:
             v = v.right
         else:
             return splay(v)
@@ -90,33 +76,19 @@ def split(root, key):
     if root.key <= key:
         right, root.right = root.right, None
         set_parent(right, None)
-        update_keys(root)
         return root, right
     else:
         left, root.left = root.left, None
         set_parent(left, None)
-        update_keys(root)
         return left, root
 
 
-def insert(root, char):
-    if root:
-        left = root
-        root = Node()
-        root.left, root.right = left, Node(char)
-        keep_parent(root)
-        update_keys(root)
-    else:
-        root = Node(char)
+def insert(root, key, char):
+    left, right = split(root, key)
+    root = Node(key, char)
+    root.left, root.right = left, right
+    keep_parent(root)
     return root
-    # left, right = split(root, key)
-    # if left is None:
-    #     left = Node(1, char)
-    #     root = Node()
-    # root = Node(key, char)
-    # root.left, root.right = left, right
-    # keep_parent(root)
-    # return root
 
 
 def get_min(root):
@@ -138,37 +110,23 @@ def merge(left, right):
         return right
     left = get_max(left)
     splay(left)
-    left.right = right
-    set_parent(right, left)
-    update_keys(left)
-    return left
+    right = get_min(right)
+    splay(right)
+    if left.key <= right.key:
+        left.right = right
+        set_parent(right, left)
+        return left
+    else:
+        right.left = left
+        set_parent(left, right)
+        return right
 
-
-# def merge(left, right):
-#     if right is None:
-#         return left
-#     if left is None:
-#         return right
-#     left = get_max(left)
-#     splay(left)
-#     right = get_min(right)
-#     splay(right)
-#     if left.key <= right.key:
-#         left.right = right
-#         set_parent(right, left)
-#         return left
-#     else:
-#         right.left = left
-#         set_parent(left, right)
-#         return right
-#
 
 def remove(root, key):
     root = find(root, key)
     set_parent(root.left, None)
     set_parent(root.right, None)
     root = merge(root.left, root.right)
-    update_keys(root)
     return root
 
 
@@ -176,20 +134,19 @@ def in_order_iterative(root):
     stack = []
     path = []
     node = root
-    while len(stack) or node:
-        if node:
+    while len(stack) or (node is not None):
+        if node is not None:
             stack.append(node)
             node = node.left
         else:
             node = stack.pop()
-            if node.val:
-                path.append(node)
+            path.append(node)
             node = node.right
     return path
 
 
 def reorder(root, start, end, where):
-    left_left, right = split(root, start)
+    left_left, right = split(root, start - 1)
     sub, right_right = split(right, end)
     if where == 0:
         return merge(sub, merge(left_left, right_right))
@@ -201,21 +158,21 @@ def reorder(root, start, end, where):
 
 
 def renumber(root):
-    for i, node in enumerate(in_order_iterative(root), start=1):
+    for i, node in enumerate(in_order_iterative(root)):
         node.key = i
     return root
 
 
 def run():
     root = None
-    for char in input():
-        root = insert(root, char)
+    for i, char in enumerate(input()):
+        root = insert(root, i, char)
     print(''.join(map(str, in_order_iterative(root))))
     number = int(input())
     for _ in range(number):
         start, end, where = map(int, input().split())
         root = reorder(root, start, end, where)
-        # root = renumber(root)
+        root = renumber(root)
         print(''.join(map(str, in_order_iterative(root))))
     print(''.join(map(str, in_order_iterative(root))))
 
