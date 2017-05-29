@@ -24,60 +24,17 @@ def update_weight(node):
 
 
 def split(node, i):
-    # while node.left and node.weight >= i:
-    #     node = node.left
-    # tree1, tree2 = Node(), Node()
-    # if node.left and node.left.weight >= i:
-    #     val = node.left.val[:i]
-    #     tree1.val = val
-    #     tree1.weight = len(val)
-    #     val = node.left.val[i:]
-    #     tree2.left = Node(val)
-    #     tree2.left.weight = len(val)
-    #     tree2.right = node.right
-    #     update_weight(tree2)
-    # elif node.right and node.left.weight < i:
-    #     index = i-node.left.weight
-    #     val = node.right.val[:index]
-    #     tree1.left = node.left
-    #     tree1.right = Node(val)
-    #     tree1.right.weight = len(val)
-    #     val = node.right.val[index:]
-    #     tree2.left = Node(val)
-    #     tree2.left.weight = len(val)
-    #     tree2.right = node.right
-    #     update_weight(tree1)
-    #     update_weight(tree2)
-    # else:
-    #     val = node.val[:i]
-    #     tree1 = Node(val)
-    #     tree1.weight = len(val)
-    #     val = node.val[i:]
-    #     tree2 = Node(val)
-    #     tree2.weight = len(val)
-    # return tree1, tree2
-    while node.left:
-        if node.left.weight >= i:
-            tree2 = Node()
-            tree1, tree2.left = split(node.left, i)
-            tree2.right = node.right
-            tree2.weight = tree2.left.weight + tree2.right.weight
-        else:
-            tree1 = Node()
-            tree1.left = node.left
-            tree1.right, tree2 = split(node.right, i - node.left.weight)
-            tree1.weight = tree1.left.weight + tree1.right.weight
     if node.left:
         if node.left.weight >= i:
             tree2 = Node()
             tree1, tree2.left = split(node.left, i)
             tree2.right = node.right
-            tree2.weight = tree2.left.weight + tree2.right.weight
+            update_weight(tree2)
         else:
             tree1 = Node()
             tree1.left = node.left
             tree1.right, tree2 = split(node.right, i - node.left.weight)
-            tree1.weight = tree1.left.weight + tree1.right.weight
+            update_weight(tree1)
     else:
         val = node.val[:i]
         tree1 = Node(val)
