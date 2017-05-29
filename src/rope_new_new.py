@@ -96,9 +96,23 @@ def split(root, key):
         return None, None
     root = find(root, key)
     if root.weight <= key:
-        right, root.right = root.right, None
-        set_parent(right, None)
-        return root, right
+        val = root.val[:key - root.weight]
+        tree1 = Node()
+        tree1.right = Node(val)
+        tree1.right.weight = len(val)
+        tree1.left = root.left
+        val = root.val[key - root.weight:]
+        tree2 = Node()
+        tree2.left = Node(val)
+        tree2.left.weight = len(val)
+        tree2.right = root.right
+        keep_parent(tree1)
+        keep_parent(tree2)
+        update_weight(tree1)
+        update_weight(tree2)
+        tree1 = simplify(tree1)
+        tree2 = simplify(tree2)
+        return tree1, tree2
     else:
         val = root.val[:key]
         tree1 = Node()
@@ -131,17 +145,22 @@ def get_max(root):
 
 
 def merge(left, right):
-    if right is None:
-        return left
-    if left is None:
-        return right
-    left = get_max(left)
-    splay(left)
-    left.right = right
-    set_parent(right, left)
-    update_weight(left)
-    left = simplify(left)
-    return left
+    res = Node()
+    res.left, res.right = left, right
+    keep_parent(res)
+    update_weight(res)
+    res = simplify(res)
+    return res
+    # if right is None:
+    #     return left
+    # if left is None:
+    #     return right
+    # left = get_max(left)
+    # splay(left)
+    # left.right = right
+    # set_parent(right, left)
+    # update_weight(left)
+    # return left
 
 
 def remove(node, start, end):
@@ -160,7 +179,8 @@ def in_order_iterative(root):
             node = node.left
         else:
             node = stack.pop()
-            path.append(node)
+            if node.val:
+                path.append(node)
             node = node.right
     return path
 
