@@ -1,26 +1,37 @@
 class Node:
-    def __init__(self, char=None, key=1):
-        self.key = key
-        self.val = char
+    def __init__(self, string=None):
+        self._val = string
         self.left = None
         self.right = None
         self.parent = None
+        self.weight = 0
+
+    def is_leaf(self):
+        if self.left:
+            return False
+        if self.right:
+            return False
+        return True
 
     def __str__(self):
         return self.val
 
-    def __repr__(self):
-        return "%d: %s" % (self.key, self.val)
+    @property
+    def val(self):
+        return self.val
 
+    @val.getter
+    def val(self):
+        left_val, right_val = '', ''
+        if self.left:
+            left_val = self.left.val or left_val
+        if self.right:
+            right_val = self.right.val or right_val
+        return self._val or left_val + right_val
 
-def update_keys(node):
-    keys_left = keys_right = 0
-    if node:
-        if node.left:
-            keys_left = node.left.key
-        if node.right:
-            keys_right = node.right.key
-        node.key = keys_left + keys_right
+    @val.setter
+    def val(self, value):
+        self._val = value
 
 
 def set_parent(child, parent):
@@ -45,10 +56,10 @@ def rotate(parent, child):
         parent.left, child.right = child.right, parent
     else:
         parent.right, child.left = child.left, parent
+    update_weight(parent)
+    update_weight(child)
     keep_parent(child)
     keep_parent(parent)
-    update_keys(parent)
-    update_keys(child)
     child.parent = grandparent
 
 
@@ -70,106 +81,99 @@ def splay(v):
     return v
 
 
-def find(v, key):
-    while v:
-        if key == v.key:
-            return splay(v)
-        elif key < v.key and v.left:
-            v = v.left
-        elif v.right:
-            v = v.right
+def update_weight(node):
+    weight_left = weight_right = 0
+    if node:
+        if node.left:
+            weight_left = node.left.weight
+        if node.right:
+            weight_right = node.right.weight
+        node.weight = weight_left + weight_right
+
+
+def find(node, i):
+    while not node.is_leaf():
+        if node.left.weight >= i:
+            node = node.left
         else:
-            return splay(v)
-    return v
+            i -= node.left.weight
+            node = node.right
+    return splay(node.parent or node)
 
 
-def split(root, key):
-    if root is None:
-        return None, None
-    root = find(root, key)
-    if root.key <= key:
-        right, root.right = root.right, None
-        set_parent(right, None)
-        update_keys(root)
-        return root, right
+def split(node, i):
+    if i == 0:
+        tree1 = Node()
+        tree2 = node
+        return tree1, tree2
+    if i == node.weight:
+        tree1 = node
+        tree2 = Node()
+        return tree1, tree2
+    node = find(node, i)
+    if node.is_leaf():
+        val = node.val[:i]
+        tree1 = Node(val)
+        tree1.weight = len(val)
+        val = node.val[i:]
+        tree2 = Node(val)
+        tree2.weight = len(val)
     else:
-        left, root.left = root.left, None
-        set_parent(left, None)
-        update_keys(root)
-        return left, root
+        if node.left.weight == i:
+            tree1 = node.left
+            tree1.parent = None
+            tree2 = node.right
+            tree2.parent = None
+        elif node.left.weight > i:
+            val = node.left.val[:i]
+            tree1 = Node(val)
+            tree1.weight = len(val)
+            keep_parent(tree1)
+            tree2 = Node()
+            tree2.right = node.right
+            val = node.left.val[i:]
+            tree2.left = Node(val)
+            tree2.left.weight = len(val)
+            keep_parent(tree2)
+            update_weight(tree2)
+        else:
+            i -= node.left.weight
+            tree1 = Node()
+            tree1.left = node.left
+            val = node.right.val[:i]
+            tree1.right = Node(val)
+            tree1.right.weight = len(val)
+            keep_parent(tree1)
+            update_weight(tree1)
+            val = node.right.val[i:]
+            tree2 = Node(val)
+            keep_parent(tree2)
+            tree2.weight = len(val)
+
+    return tree1, tree2
 
 
-def insert(root, char):
-    if root:
-        left = root
-        root = Node()
-        root.left, root.right = left, Node(char)
-        keep_parent(root)
-        update_keys(root)
-    else:
-        root = Node(char)
-    return root
-    # left, right = split(root, key)
-    # if left is None:
-    #     left = Node(1, char)
-    #     root = Node()
-    # root = Node(key, char)
-    # root.left, root.right = left, right
-    # keep_parent(root)
-    # return root
+def merge(tree1, tree2):
+    if not tree1.val:
+        return tree2
+    if not tree2.val:
+        return tree1
+    res = Node()
+    res.left, res.right = tree1, tree2
+    keep_parent(res)
+    update_weight(res)
+    return res
 
 
-def get_min(root):
-    while root.left:
-        root = root.left
-    return root
+def delete(node, start, end):
+    tree1, tree2 = split(node, start)
+    substring, tree3 = split(tree2, end - start + 1)
+    return merge(tree1, tree3), substring
 
 
-def get_max(root):
-    while root.right:
-        root = root.right
-    return root
-
-
-def merge(left, right):
-    if right is None:
-        return left
-    if left is None:
-        return right
-    left = get_max(left)
-    splay(left)
-    left.right = right
-    set_parent(right, left)
-    update_keys(left)
-    return left
-
-
-# def merge(left, right):
-#     if right is None:
-#         return left
-#     if left is None:
-#         return right
-#     left = get_max(left)
-#     splay(left)
-#     right = get_min(right)
-#     splay(right)
-#     if left.key <= right.key:
-#         left.right = right
-#         set_parent(right, left)
-#         return left
-#     else:
-#         right.left = left
-#         set_parent(left, right)
-#         return right
-#
-
-def remove(root, key):
-    root = find(root, key)
-    set_parent(root.left, None)
-    set_parent(root.right, None)
-    root = merge(root.left, root.right)
-    update_keys(root)
-    return root
+def insert(node, where, add_node):
+    tree1, tree2 = split(node, where)
+    return merge(merge(tree1, add_node), tree2)
 
 
 def in_order_iterative(root):
@@ -182,41 +186,20 @@ def in_order_iterative(root):
             node = node.left
         else:
             node = stack.pop()
-            if node.val:
+            if node.is_leaf():
                 path.append(node)
             node = node.right
     return path
 
 
-def reorder(root, start, end, where):
-    left_left, right = split(root, start)
-    sub, right_right = split(right, end)
-    if where == 0:
-        return merge(sub, merge(left_left, right_right))
-    else:
-        if where > start:
-            where += end - start
-        left, right = split(merge(left_left, right_right), where)
-        return merge(left, merge(sub, right))
-
-
-def renumber(root):
-    for i, node in enumerate(in_order_iterative(root), start=1):
-        node.key = i
-    return root
-
-
 def run():
-    root = None
-    for char in input():
-        root = insert(root, char)
-    print(''.join(map(str, in_order_iterative(root))))
+    root = Node(input())
+    root.weight = len(root.val)
     number = int(input())
     for _ in range(number):
         start, end, where = map(int, input().split())
-        root = reorder(root, start, end, where)
-        # root = renumber(root)
-        print(''.join(map(str, in_order_iterative(root))))
+        rest, substring = delete(root, start, end)
+        root = insert(rest, where, substring)
     print(''.join(map(str, in_order_iterative(root))))
 
 
