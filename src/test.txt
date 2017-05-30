@@ -1,11 +1,6 @@
-10
-Insert 3
-Insert 20
-Insert 4
-Insert 30
-Insert 21
-Insert 30
-Insert 5
-ExtractMax
-ExtractMax
-ExtractMax
+Simple_text_to_concat_with_another
+4
+0 10 0
+21 33 21
+11 20 11
+16 16 17
