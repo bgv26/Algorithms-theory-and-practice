@@ -1,25 +1,4 @@
-def naive():
-    n = int(input())
-    array = list(map(int, input().split()))
-    d = [1] * n
-    prev = [-1] * n
-    for i in range(n):
-        for j in range(i):
-            if array[j] >= array[i]:
-                d[i] = max(d[i], d[j] + 1)
-                prev[i] = j
-    ans = max(d)
-    l = []
-    k = ans
-    for i in range(n, 0, -1):
-        if d[i - 1] == k:
-            l.append(i)
-            k -= 1
-        if k < 1:
-            break
-
-    print(ans)
-    print(' '.join(map(str, l[::-1])))
+import bisect
 
 
 def main():
@@ -29,29 +8,23 @@ def main():
     inf = 10 ** 10
     d = [inf] * (n + 1)
     d[0] = -inf
-    prev = [None] * n
-    up = 0
+    pos = [0] * (n + 1)
+    prev = [0] * n
     for i in range(n):
-        left = 1
-        right = up
-        while left <= right:
-            middle = (left + right) // 2
-            if d[middle] < array[i]:
-                left = middle + 1
-            elif d[middle] == array[i]:
-                left += 1
-            else:
-                right = middle - 1
-        d[left] = array[i]
-        prev[left] = n - i
-        if left > up:
-            up = left
+        right = bisect.bisect_right(d, array[i])
+        if d[right - 1] <= array[i] <= d[right]:
+            d[right] = array[i]
+            pos[right] = i
+            prev[i] = pos[right - 1]
     d = [item for item in d if item not in (inf, -inf)]
-    prev = [item for item in prev if item]
     print(len(d))
-    print(' '.join(map(str, reversed(prev))))
+    answer = [0] * len(d)
+    p = pos[len(d)]
+    for j in range(len(d)):
+        answer[j] = n - p
+        p = prev[p]
+    print(' '.join(map(str, answer)))
 
 
 if __name__ == '__main__':
-    # naive()
     main()
