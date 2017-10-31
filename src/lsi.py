@@ -1,9 +1,12 @@
+import time
+
+
 def longest_subseq():
     # Прочитаем исходные данные из консоли
     n = int(input())
     x = [int(i) for i in input().split(' ')]
-    P = [0]*n
-    M = [0]*(n + 1)
+    P = [0] * n
+    M = [0] * (n + 1)
     L = 0
     x = x[::-1]
     for i in range(n):
@@ -26,13 +29,16 @@ def longest_subseq():
             M[newL] = i
 
     # Восстановим решение по рассчитанным данным
-    re = [0]*L
+    re = [0] * L
     k = M[L]
-    for i in range(L-1, -1, -1):
+    for i in range(L - 1, -1, -1):
         re[i] = n - k
         k = P[k]
     print(len(re))
-    print(' '.join(map(str,re[::-1])))
+    print(' '.join(map(str, re[::-1])))
+
 
 if __name__ == "__main__":
+    start_time = time.time()
     longest_subseq()
+    print('--- {} seconds ----'.format(time.time() - start_time))

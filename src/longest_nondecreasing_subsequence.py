@@ -1,4 +1,5 @@
 import bisect
+import time
 
 
 def main():
@@ -27,4 +28,6 @@ def main():
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     main()
+    print('--- {} seconds ----'.format(time.time() - start_time))
